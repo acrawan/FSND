@@ -13,9 +13,11 @@ def paginate_questions(request,questions):
   page = request.args.get('page', 1, type=int)
   start = (page-1) * QUESTIONS_PER_PAGE 
   end = start + QUESTIONS_PER_PAGE
+
   formatted_questions = [question.format() for question in questions]
-  current_questions = formatted_questions[start:end]
-  return current_questions
+  all_questions = formatted_questions[start:end]
+
+  return all_questions
     
 
 def create_app(test_config=None):
@@ -44,18 +46,19 @@ def create_app(test_config=None):
   '''
   @app.route('/categories', methods=['GET'])
   def retrieve_categories():
+
     categories = Category.query.order_by(Category.type).all()
 
     if len(categories) == 0:
-        abort(404)
+      abort(404)
 
     categories_list= {}
     for category in categories:
       categories_list[category.id] = category.type
 
     return jsonify({
-        'success': True,
-        'categories': categories_list
+      'success': True,
+      'categories': categories_list
     }), 200
 
 
@@ -74,27 +77,24 @@ def create_app(test_config=None):
 
   @app.route('/questions')
   def retrieve_questions():
-    
-    try: 
-      selection = Question.query.order_by(Question.id).all()
-      current_questions = paginate_questions(request, selection)
-      if len(current_questions) == 0:
-        abort(404)
 
-      categories = Category.query.all()
-      categories_list = {}
-      for category in categories:
-          categories_list[category.id] = category.type
+    questions = Question.query.order_by(Question.id).all()
+    all_questions = paginate_questions(request, questions)
+    if len(all_questions) == 0:
+      abort(404)
 
-      return jsonify({
-        'success': True,
-        'questions': current_questions,
-        'total_questions': len(Question.query.all()),
-        'categories': categories_list
-      }), 200
+    categories = Category.query.all()
+    categories_list = {}
+    for category in categories:
+      categories_list[category.id] = category.type
 
-    except: 
-      abort(422)
+    return jsonify({
+      'success': True,
+      'questions': all_questions,
+      'total_questions': len(Question.query.all()),
+      'categories': categories_list
+    }), 200
+
 
   '''
   @-----------------TODO: 
@@ -105,6 +105,7 @@ def create_app(test_config=None):
   '''
   @app.route('/questions/<int:question_id>', methods=['DELETE'])
   def delete_question(question_id): 
+
     try:
       question = Question.query.filter(Question.id == question_id).one_or_none()
 
@@ -134,6 +135,7 @@ def create_app(test_config=None):
   '''
   @app.route('/questions', methods=['POST'])
   def create_question(): 
+
     body = request.get_json()
 
     new_question = body.get('question', None)
@@ -142,46 +144,45 @@ def create_app(test_config=None):
     new_difficulty=  body.get('difficulty', None)
     search_term = body.get('searchTerm', None)
 
+    try:               
+      if search_term is not None:
+        if search_term.isspace() or search_term=='': 
+          raise
 
-    if search_term is not None:
-      try: 
-        selection = Question.query.filter(Question.question.ilike(f'%{search_term}%')).all()
+        search_results = Question.query.filter(Question.question.ilike(f'%{search_term}%')).all()
 
-        if (len(selection) == 0):
+        if (len(search_results) == 0):
           abort(404)
 
-        questions = paginate_questions(request, selection)
+        questions = paginate_questions(request, search_results)
 
         return jsonify({
-            'success': True,
-            'questions': questions,
-            'total_questions': len(Question.query.all())
-        })
+          'success': True,
+          'questions': questions,
+          'total_questions': len(Question.query.all())
+        }), 200
 
-      except:
-        abort(404)
-
-    else: 
-      try:
+      else: 
 
         if(not(new_question and new_answer and new_category and new_difficulty)):
-            abort(422)
+          abort(404)
       
         question = Question(question= new_question, answer=new_answer, category=new_category, difficulty= new_difficulty )
         question.insert()
 
-        selection = Question.query.order_by(Question.id).all()
-        current_questions = paginate_questions(request, selection)
+        questions = Question.query.order_by(Question.id).all()
+        all_questions = paginate_questions(request, questions)
 
         return jsonify({
           'success': True,
           'created': question.id,
-          'questions': current_questions,
+          'questions': all_questions,
           'total_questions': len(Question.query.all())
         })
 
-      except:
-        abort(422)
+    except:
+      abort(422)
+
   '''
   @-----------------TODO: 
   Create a POST endpoint to get questions based on a search term. 
@@ -234,22 +235,24 @@ def create_app(test_config=None):
   @app.route('/categories/<int:category_id>/questions', methods=['GET'])
   def category_questions(category_id): 
 
-    category = Category.query.filter(Category.id == category_id).one_or_none()
-    if (category is None):
-      abort(422)
-
-  
-    questions = Question.query.filter(Question.category == category.id).all()
-    current_questions = paginate_questions(request, questions)
-
-    return jsonify({
-      'success': True,
-      'questions': current_questions,
-      'total_questions': len(questions), 
-      'current_category': category.id
-    })
+    try: 
+      category = Category.query.filter(Category.id == category_id).one_or_none()
+      if (category is None):
+        abort(404)
 
     
+      questions = Question.query.filter(Question.category == category.id).all()
+      all_questions = paginate_questions(request, questions)
+
+      return jsonify({
+        'success': True,
+        'questions': all_questions,
+        'total_questions': len(questions), 
+        'current_category': category.id
+      }), 200
+
+    except: 
+      abort(422)
 
 
   '''
@@ -271,7 +274,7 @@ def create_app(test_config=None):
     quiz_category = body['quiz_category']
 
     if ((quiz_category is None) or (previous_questions is None)):
-      abort(400)
+      abort(404)
 
     try:   
 
@@ -300,7 +303,7 @@ def create_app(test_config=None):
 
     
     except: 
-      abort(404)
+      abort(422)
       
 
   '''
