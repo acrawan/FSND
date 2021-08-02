@@ -115,7 +115,8 @@ def create_app(test_config=None):
       
       return jsonify({
         'success': True,
-        'deleted': question_id
+        'deleted': question_id, 
+        'total_questions': len(Question.query.all())
       }), 200
 
     except:
@@ -176,6 +177,7 @@ def create_app(test_config=None):
           'success': True,
           'created': question.id,
           'questions': current_questions,
+          'total_questions': len(Question.query.all())
         })
 
       except:
@@ -269,7 +271,7 @@ def create_app(test_config=None):
     quiz_category = body['quiz_category']
 
     if ((quiz_category is None) or (previous_questions is None)):
-        abort(400)
+      abort(400)
 
     try:   
 
