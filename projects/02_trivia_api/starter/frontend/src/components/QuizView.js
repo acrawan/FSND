@@ -12,7 +12,6 @@ class QuizView extends Component {
         quizCategory: null,
         previousQuestions: [], 
         showAnswer: false,
-        answerArray: [], 
         categories: {},
         numCorrect: 0,
         currentQuestion: {},
@@ -72,7 +71,7 @@ class QuizView extends Component {
         return;
       },
       error: (error) => {
-        alert('Unable to load question. Please try your request again' + error.responseText)
+        alert('Unable to load question. Please try your request again')
         return;
       }
     })

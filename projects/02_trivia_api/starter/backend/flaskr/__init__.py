@@ -8,13 +8,13 @@ from models import setup_db, Question, Category
 
 QUESTIONS_PER_PAGE = 10
 
-def paginate_questions(request,selection):
+def paginate_questions(request,questions):
 
   page = request.args.get('page', 1, type=int)
   start = (page-1) * QUESTIONS_PER_PAGE 
   end = start + QUESTIONS_PER_PAGE
-  questions = [question.format() for question in selection]
-  current_questions = questions[start:end]
+  formatted_questions = [question.format() for question in questions]
+  current_questions = formatted_questions[start:end]
   return current_questions
     
 
@@ -56,7 +56,7 @@ def create_app(test_config=None):
     return jsonify({
         'success': True,
         'categories': categories_list
-    })
+    }), 200
 
 
   '''
@@ -91,7 +91,7 @@ def create_app(test_config=None):
         'questions': current_questions,
         'total_questions': len(Question.query.all()),
         'categories': categories_list
-      })
+      }), 200
 
     except: 
       abort(422)
@@ -116,7 +116,7 @@ def create_app(test_config=None):
       return jsonify({
         'success': True,
         'deleted': question_id
-      })
+      }), 200
 
     except:
       abort(422)
@@ -232,24 +232,22 @@ def create_app(test_config=None):
   @app.route('/categories/<int:category_id>/questions', methods=['GET'])
   def category_questions(category_id): 
 
-    category = Category.query.filter_by(id=category_id).one_or_none()
+    category = Category.query.filter(Category.id == category_id).one_or_none()
     if (category is None):
       abort(422)
 
-    try:
-      questions = Question.query.filter_by(category == category_id).all()
-      current_questions = paginate_questions(request, questions)
+  
+    questions = Question.query.filter(Question.category == category.id).all()
+    current_questions = paginate_questions(request, questions)
 
-      return jsonify({
-        'success': True,
-        'questions': current_questions,
-        'total_questions': len(questions), 
-        'current_category': category.id
-      })
+    return jsonify({
+      'success': True,
+      'questions': current_questions,
+      'total_questions': len(questions), 
+      'current_category': category.id
+    })
 
-    except:
-      abort(404)
-
+    
 
 
   '''
@@ -265,50 +263,13 @@ def create_app(test_config=None):
   '''
   @app.route('/quizzes', methods=['POST'])
   def play_quiz(): 
-    """This returns a random question to play quiz."""
 
-    # process the request data and get the values
-    data = request.get_json()
-    previous_questions = data.get('previous_questions')
-    quiz_category = data.get('quiz_category')
+    body = request.get_json()
+    previous_questions = body['previous_questions']
+    quiz_category = body['quiz_category']
 
-    # return 404 if quiz_category or previous_questions is empty
     if ((quiz_category is None) or (previous_questions is None)):
         abort(400)
-
-    # if default value of category is given return all questions
-    # else return questions filtered by category
-    if (quiz_category['id'] == 0):
-        questions = Question.query.all()
-    else:
-        questions = Question.query.filter_by(
-            category=quiz_category['id']).all()
-
-    # defines a random question generator method
-    def get_random_question():
-        return questions[random.randint(0, len(questions)-1)]
-
-    # get random question for the next question
-    next_question = get_random_question()
-
-    # defines boolean used to check that the question
-    # is not a previous question
-    found = True
-
-    while found:
-        if next_question.id in previous_questions:
-            next_question = get_random_question()
-        else:
-            found = False
-
-    return jsonify({
-        'success': True,
-        'question': next_question.format(),
-    }), 200
-      
-
-  '''
-
 
     try:   
 
@@ -330,16 +291,17 @@ def create_app(test_config=None):
       if len(new_questions) > 0:
         next_question = random.choice(new_questions)
 
-
-
       return jsonify({
-          'success': True,
-          'question': next_question
-        })
+        'success': True,
+        'question': next_question
+      }), 200
 
-      
+    
     except: 
       abort(404)
+      
+
+  '''
 
   @TODO: 
   Create error handlers for all expected errors 
