@@ -43,9 +43,11 @@ class TriviaTestCase(unittest.TestCase):
     Write at least one test for each test for successful operation and for expected errors.
     """
 
+
     # /categories test    
 
     def test_get_categories(self):
+
         res = self.client().get('/categories')
         data = json.loads(res.data)
 
@@ -54,6 +56,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(len(data['categories']))
 
     def test_404_sent_invalid_request(self):
+
         res = self.client().get('/categories/Sports')
         data = json.loads(res.data)
 
@@ -65,6 +68,7 @@ class TriviaTestCase(unittest.TestCase):
     # /questions test    
 
     def test_get_paginated_questions(self):
+
         res = self.client().get('/questions')
         data = json.loads(res.data)
 
@@ -76,6 +80,7 @@ class TriviaTestCase(unittest.TestCase):
 
 
     def test_404_sent_requesting_questions_beyond_valid_page(self):
+
         res = self.client().get('/questions?page=5000')
         data = json.loads(res.data)
 
@@ -105,6 +110,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['total_questions'], total_questions)
         self.assertEqual(question, None)
 
+
     def test_404_if_question_does_not_exist(self):
         res = self.client().delete('/questions/ten')
         data = json.loads(res.data)
@@ -122,11 +128,12 @@ class TriviaTestCase(unittest.TestCase):
         res = self.client().post('/questions', json=self.new_question)
 
         data = json.loads(res.data)
-        new_total_questions = len(Question.query.all())
+        new_total= len(Question.query.all())
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data["success"], True)
-        self.assertEqual(new_total_questions - total_questions, 1)
+        self.assertEqual(new_total - total_questions, 1)
+
 
     def test_422_if_question_creation_fails(self):
         
@@ -154,6 +161,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertEqual(data['success'], True)
         self.assertIsNotNone(data['questions'])
         self.assertIsNotNone(data['total_questions'])
+
 
     def test_404_empty_search(self):
 
@@ -195,6 +203,7 @@ class TriviaTestCase(unittest.TestCase):
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['success'], True)
+
 
     def test_422_wrong_syntax(self):
         
